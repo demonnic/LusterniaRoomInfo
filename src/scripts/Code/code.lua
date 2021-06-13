@@ -47,25 +47,29 @@ local function sortFunc(t,a,b)
   end
   return aname < bname
 end
-demonIH.container = demonIH.container or Adjustable.Container:new({
-                                                                   name = "demonIHContainer",
-                                                                   x = 0,
-                                                                   y = 275,
-                                                                   height = 625,
-                                                                   width = 400,
-                                                                   titleText = ""
-                                                                 })
-demonIH.console = demonIH.console or Geyser.MiniConsole:new({
-                                                              name = "demonIHConsole",
-                                                              autoWrap = autoWrap,
-                                                              wrapAt = wrapAt,
-                                                              x = 0,
-                                                              y = 0,
-                                                              width = "100%",
-                                                              height = "95%",
-                                                              color = "black",
-                                                              fontSize = fontSize,
-                                                            }, demonIH.container)
+local containerConfig = {
+  name = "demonIHContainer",
+  x = 0,
+  y = 275,
+  height = 625,
+  width = 400,
+  titleText = ""
+}
+
+local defaultConsoleConfig = {
+  name = "demonIHConsole",
+  autoWrap = autoWrap,
+  wrapAt = wrapAt,
+  x = 0,
+  y = 0,
+  width = "100%",
+  height = "95%",
+  color = "black",
+  fontSize = fontSize,
+}
+
+demonIH.container = demonIH.container or Adjustable.Container:new(containerConfig)
+demonIH.console = demonIH.console or Geyser.MiniConsole:new(defaultConsoleConfig, demonIH.container)
 local function printLine(number, name, attrib, spacing)
   local color = infoColors[attrib] or "<LightGoldenrod>"
   local echoString =
@@ -88,6 +92,11 @@ local function addNDB(txt)
   for _,name in pairs(names) do
     if not done[name] then
       local color = ndb.getcolor(name) or "<white>"
+      if color == "" then -- they're a rogue, most likely, since the ndb has the name but returned "" as the color
+        debugc("InfoHere window got '' from ndb.getcolor for " .. name .. ". We are assuming they are rogue and looking up the correct color in ndb.conf or mm.conf. If it can't find either it will fallback to white")
+        color = ndb.roguescolor or mm.conf.roguescolor
+        color = color or "<white>"
+      end
       txt = txt:gsub(name, color .. name .. format)
       done[name] = true
     end
@@ -126,7 +135,7 @@ function demonIH.writeItemsHere()
       )
   end
 end
- 
+
 function demonIH.writeItems2()
   demonIH.console:clear()
   local players = {}
